@@ -47,11 +47,8 @@ export async function pollRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post(
-    "/pools/:id/join",
-    {
-      onRequest: [authenticate],
-    },
-
+    "/pools/join",
+    { onRequest: [authenticate] },
     async (request, reply) => {
       const joinPoolBody = z.object({
         code: z.string(),
@@ -102,6 +99,97 @@ export async function pollRoutes(fastify: FastifyInstance) {
         },
       });
       return reply.status(201).send();
+    }
+  );
+
+  fastify.get(
+    "/pools",
+    {
+      onRequest: [authenticate],
+    },
+    async (request) => {
+      const pools = await prisma.pool.findMany({
+        where: {
+          participants: {
+            some: {
+              userId: request.user.sub,
+            },
+          },
+        },
+        include: {
+          _count: {
+            select: {
+              participants: true,
+            },
+          },
+          participants: {
+            select: {
+              id: true,
+
+              user: {
+                select: {
+                  avatarUrl: true,
+                },
+              },
+            },
+            take: 5,
+          },
+          owner: {
+            select: {
+              name: true,
+              id: true,
+            },
+          },
+        },
+      });
+
+      return pools;
+    }
+  );
+
+  fastify.get(
+    "/pools/:id",
+    {
+      onRequest: [authenticate],
+    },
+    async (request) => {
+      const getPollsParams = z.object({
+        id: z.string(),
+      });
+
+      const { id } = getPollsParams.parse(request.params);
+
+      const poll = await prisma.pool.findUnique({
+        where: {
+          id,
+        },
+        include: {
+          _count: {
+            select: {
+              participants: true,
+            },
+          },
+          participants: {
+            select: {
+              id: true,
+
+              user: {
+                select: {
+                  avatarUrl: true,
+                },
+              },
+            },
+            take: 5,
+          },
+          owner: {
+            select: {
+              name: true,
+              id: true,
+            },
+          },
+        },
+      });
+      return { poll };
     }
   );
 }

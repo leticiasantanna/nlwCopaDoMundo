@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
+import fetch from 'node-fetch'
 import { authenticate } from "../plugins/authenticate";
 
 export async function authRoutes(fastify: FastifyInstance) {
@@ -25,7 +26,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       {
         method: "GET",
         headers: {
-          Authorization: `Beader ${access_token}`,
+          Authorization: `Bearer ${access_token}`,
         },
       }
     );
@@ -64,10 +65,10 @@ export async function authRoutes(fastify: FastifyInstance) {
       },
       {
         sub: user.id,
-        expiresIn: "2 days",
+        expiresIn: "5 days",
       }
     );
 
-    return { userInfo };
+    return { token };
   });
 }
